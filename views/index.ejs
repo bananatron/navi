@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Message Buss Listener</title>
+    <link href="/images/favicon.ico" rel="icon" type="image/x-icon" />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+    <!-- table http://tympanus.net/Tutorials/StickyTableHeaders/index.html -->
+  </head>
+
+  <body>
+    <h1>Message Bus Listener</h1>
+    <p>Uses websockets to listen to Firebase db which updates from post requests pushed from your MB app. Will update front-end in real time.</p><br>
+      
+    <div id="message-details">
+      <b>Message</b>: <span id="s-message"> </span><br><br>
+      <b>Errors:</b> <span id="s-errors"> </span><br>
+      <b>Source:</b> <span id="s-source"> </span><br>
+      <b>Date:</b> <span id="s-date"> </span><br>
+    </div>
+    
+    <table id="message-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>Date</th>
+          <th>Errors</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+
+      </tbody>
+    </table>
+    
+    <div id="footer">&copy; Runding 2015 <i>(v 0.5)</i></div>
+  </body>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  <script src="https://cdn.firebase.com/js/client/2.2.2/firebase.js"></script>
+  <script>
+    var url = "https://mbdrop.firebaseio.com";
+    
+    String.prototype.replaceAll = function(target, replacement) {
+      return this.split(target).join(replacement);
+    };
+    
+    spinner = "&nbsp;&nbsp;&nbsp;<img src='http://imgsrv.wjvl.com/image/wjvlf/enhanced_now_playing/widget3/spinner.gif' />"
+    function build(value, i){
+      if (value.state.toLowerCase() == "pending"){
+        spinner = "&nbsp;&nbsp;&nbsp;<img src='http://imgsrv.wjvl.com/image/wjvlf/enhanced_now_playing/widget3/spinner.gif' />"
+      }
+      else {
+        spinner = ""
+      }
+      $("tbody").append("<tr class='tr-mes " + value.state.toLowerCase() + "'" + "id='" + i + "'></tr>");
+      //$("#"+i).append("<div class='pending-bar'></div>");
+      $("#"+i).append("<td class='td-source'>"+ value.request_name +"</td>");
+      $("#"+i).append("<td class='td-date'>"+ value.date +"</td>");
+      $("#"+i).append("<td class='td-errors'>"+ value.err.replaceAll(":","") +"</td>");
+      $("#"+i).append("<td class='td-status'>" + value.state + spinner + "</td>");
+      
+      
+      $("#"+i).append("<td class='td-body'>" + value.msg_body.replaceAll("\\r",", ").replaceAll("\\n","").replaceAll("\\","") +"</td>");
+       $(".td-body").hide();
+      $( "#"+i ).fadeTo( Math.floor(Math.random() * 1500) , 1, function() {
+        // Animation complete.
+      });
+      $(".tr-pending").animate({ width: '100%' }, 10000);
+    }
+    
+
+    
+    // Reference to our firebase
+    var ref = new Firebase(url);
+    // Attach an asynchronous callback to read the data at our posts reference
+    ref.on("value", function(snapshot) {
+      $("tbody").children().empty();
+      console.log(snapshot.val());
+      var i = 0;
+      $("tbody").empty();
+      $.each(snapshot.val(), function(key, value){
+        i += 1;
+        build(value, i);
+      });
+    }, function (errorObject) {
+      console.log("The read failed: " + errorObject.code);
+    });
+
+    
+$( document ).ready(function() {
+  
+    $("#message-details").hide();
+  
+    $(document).on('click', "#message-details", function(){
+       $( this ).slideUp();
+    });
+
+    $(document).on('click', ".tr-mes", function(){
+      $("#s-message").empty();
+       $("#s-message").append($(this).clone().find(':nth-child(5)').text());
+      $("#s-errors").empty();
+      $("#s-errors").append($(this).clone().find(':nth-child(3)').first().text());
+
+      $("#s-source").empty();
+      $("#s-source").append($(this).clone().find(':nth-child(1)').first().text());
+      $("#s-date").empty();
+      $("#s-date").append($(this).clone().find(':nth-child(2)').text());
+
+      console.log($(this).clone().find(':nth-child(1)').first().text());
+      $( "#message-details").slideDown();
+      
+    });
+});
+
+  </script>
+</html>
